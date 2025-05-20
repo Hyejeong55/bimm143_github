@@ -1,0 +1,201 @@
+---
+title: "Class 7: Machine Learning 1"
+author: "Hyejeong Choi (PID: A16837133)"
+format: pdf
+toc: true
+---
+
+Today we will explore unsupervised machine learning methods starting with clustering and dimensionality reduction.
+
+## Clustering
+
+To start, let's make up some data to cluster where we know what the answer should be. The `rnorm()` function will help us here.
+
+```{r}
+hist(rnorm(10000, mean=3))
+```
+
+Return 30 numbers centered on -3.
+
+```{r}
+tmp <- c(rnorm(30, mean=-3), rnorm(30, mean=3))
+
+x <- cbind(x=tmp, y=rev(tmp))
+
+x
+```
+
+Make a plot of `x`.
+
+```{r}
+plot(x)
+```
+
+### K-means
+
+The main function in "base" R for K-means clustering is called `kmeans()`:
+
+```{r}
+km <- kmeans(x, centers=2)
+km
+```
+
+The `kmeans()` function returns a "list" with 9 components. You can see the named components of any list with the `attributes()` function.
+
+```{r}
+attributes(km)
+```
+
+> Q. How many points are in each cluster?
+
+```{r}
+km$size
+```
+
+> Cluster assignment/membership vector?
+
+```{r}
+km$cluster
+```
+
+> Q. Cluster centers?
+
+```{r}
+km$centers
+```
+
+> Q. Make a plot of our `kmeans()` results showing cluster assignment using different colors for each cluster/group of points and cluster centers in blue.
+
+```{r}
+plot(x, col=km$cluster)
+points(km$centers, col="blue", pch=15, cex=2)
+```
+
+> Q. Run `kmeans()` again on `x` and this cluster into 4 groups/clusters and plot the same result figure as above.
+
+```{r}
+new_km <- kmeans(x, centers=4)
+plot(x, col=new_km$cluster)
+points(new_km$centers, col="blue", pch=15, cex=2)
+```
+
+> **key-point**: K-means clustering is super popular but can be misused. One big limitation is that it can impose a clustering pattern on your data even if clear natural grouping don't exist - i.e. it does what you tell it to do in terms of `centers`.
+
+### Hierarchical Clustering
+
+The main function in "base" R for Hierarchical Clustering is called `hclust()`.
+
+You can't just pass our dataset as is into `hclust()`. You must give "distance matrix" as input. We can get this from the `dist()` function in R.
+
+```{r}
+d <- dist(x)
+hc <- hclust(d)
+hc
+```
+
+The results of `hclust()` don't have a useful `print()` method, but do have a special `plot()` method.
+
+```{r}
+plot(hc)
+abline(h=8, col="red")
+```
+
+To get our main cluster assignment (membership vector) we need to "cut" the tree at the big goal posts...
+
+```{r}
+grps <- cutree(hc, h=8)
+grps
+```
+
+```{r}
+table(grps)
+```
+
+```{r}
+plot(x, col=grps)
+```
+
+Hierarchical Clustering is distinct in that the dendrogram (tree figure) can reveal the potential grouping in your data (unlike K-means).
+
+## Principal Component Analysis (PCA)
+
+PCA is a common and highly useful dimensionality reduction technique used in many fields - particularly bioinformatics.
+
+Here we will analyze some data from the UK on food consumption.
+
+### Data import
+
+```{r}
+url <- "https://tinyurl.com/UK-foods"
+x <- read.csv(url)
+
+head(x)
+```
+
+```{r}
+x <- read.csv(url, row.names=1)
+head(x)
+```
+
+```{r}
+barplot(as.matrix(x), beside=T, col=rainbow(nrow(x)))
+```
+
+```{r}
+barplot(as.matrix(x), beside=F, col=rainbow(nrow(x)))
+```
+
+One conventional plot that can be useful is called a "pairs" plot.
+
+```{r}
+pairs(x, col=rainbow(nrow(x)), pch=16)
+```
+
+### PCA to the rescue
+
+The main function in base R for PCA is called `prcomp()`.
+
+```{r}
+pca <- prcomp(t(x))
+summary(pca)
+```
+
+The `prcomp()` function returns a list object of our results with five attributes/components.
+
+```{r}
+attributes(pca)
+```
+
+The two main "results" in here are `pca$x` and `pca$rotation`. The first of these (`pca$x`) contains the scores of the data on the new PC axis - we use these to make our "PCA plot".
+
+```{r}
+pca$x
+```
+
+```{r}
+library(ggplot2)
+
+# Make a plot of pca$x with PC1 vs PC2
+# ggrepel , geom_text_repel
+ggplot(pca$x) +
+  aes(PC1, PC2, label=rownames(pca$x)) +
+  geom_point() +
+  geom_label()
+```
+
+The graph above shows that the results from N. Ireland are most different compared to the other three countries.
+
+The second major result is contained in the `pca$rotation` object or component. Let's plot this to see what PCA is picking up...
+
+```{r}
+ggplot(pca$rotation) +
+  aes(PC1, rownames(pca$rotation)) +
+  geom_col()
+```
+
+The graph above shows that, based on the previous graph, soft drinks and fresh potatoes are more likely to be associated with N. Ireland and every other food are more likely to be associated with the other three countries.
+
+
+
+
+

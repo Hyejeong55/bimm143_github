@@ -1,0 +1,41 @@
+---
+title: "Class 19"
+format: html
+---
+
+> Q2. 
+
+- open in Seaview and use your eyes or a consensus sequence
+
+- ask ChatGPT
+
+- read the sequences into R with the **bio3d** package
+
+```{r}
+library(bio3d)
+
+sequence.aln <- read.fasta('A16837133_mutant_seq.fa')
+```
+
+Let's try score conservation:
+
+```{r}
+score <- conserv(sequence.aln)
+score
+```
+
+There are 1 for conserved and less than one for the mutation sites
+
+```{r}
+mutant.position <- which(score < 1)
+mutant.position
+```
+
+```{r}
+sequence.aln$ali[,mutant.position]
+```
+
+
+
+
+

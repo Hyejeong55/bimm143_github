@@ -1,0 +1,144 @@
+---
+title: "Class 17: Analyzing Sequence Data in the Cloud"
+author: "Hyejeong Choi (PID: A16837133)"
+format: pdf
+toc: TRUE
+---
+
+# Downstream Analysis
+
+Import Kallisto results using the `tximport()` function.
+
+```{r}
+library(tximport)
+
+# setup the folder and filenames to read
+folders <- dir(pattern="SRR21568*")
+samples <- sub("_quant", "", folders)
+files <- file.path( folders, "abundance.h5" )
+names(files) <- samples
+
+txi.kallisto <- tximport(files, type = "kallisto", txOut = TRUE)
+```
+Look at the transcript count estimates:
+
+```{r}
+head(txi.kallisto$counts)
+```
+
+Look at the total number of transcript counts in each sample by adding the column:
+
+```{r}
+colSums(txi.kallisto$counts)
+```
+
+Look at how many transcripts are found by adding the total of the rows:
+
+```{r}
+sum(rowSums(txi.kallisto$counts)>0)
+```
+
+Remove the transcripts that have no reads in the data:
+
+```{r}
+# add the rows and keep the data that are greater than zero
+to.keep <- rowSums(txi.kallisto$counts) > 0
+
+# create a new dataset
+kset.nonzero <- txi.kallisto$counts[to.keep,]
+```
+
+```{r}
+# keep the data that change between the samples and remove the data that do not
+keep2 <- apply(kset.nonzero,1,sd)>0
+
+# create a new dataset
+x <- kset.nonzero[keep2,]
+```
+
+# Principal Component Analysis
+
+```{r}
+# transpose the x dataset and scale it
+pca <- prcomp(t(x), scale=TRUE)
+```
+
+```{r}
+summary(pca)
+```
+
+```{r}
+plot(pca$x[,1], pca$x[,2],
+     col=c("blue","blue","red","red"),
+     xlab="PC1", ylab="PC2", pch=16)
+```
+
+> Q. Use ggplot to make a similar figure of PC1 vs PC2 and a seperate figure PC1 vs PC3 and PC2 vs PC3.
+
+First create a dataframe for grouping the control and treatment groups:
+
+```{r}
+# create a dataframe and group the samples into control and treatment
+# use factor() to turn the characters into a factor for easier coloring using discrete values
+
+colors <- data.frame(group=factor(c('control','control', 'treatment','treatment')))
+
+# make the rownames the sample names
+
+rownames(colors) <- rownames(pca$x)
+
+colors
+```
+
+Add the group dataframe as another column into a PCA dataframe:
+
+```{r}
+# convert the pca$x into a dataframe to add the group column
+
+new_pca <- as.data.frame(pca$x)
+
+# add the group column
+
+new_pca$group <- colors$group
+
+new_pca
+
+```
+
+PC1 vs PC2
+
+```{r}
+library(ggplot2)
+library(ggrepel)
+
+ggplot(new_pca) +
+  aes(PC1, PC2, label=rownames(new_pca), col=group) +
+  geom_point() +
+  geom_text_repel(size=3) +
+  theme_bw()
+```
+
+PC1 vs PC3
+
+```{r}
+ggplot(new_pca) +
+  aes(PC1, PC3, label=rownames(new_pca), col=group) +
+  geom_point() +
+  geom_text_repel(size=3) +
+  theme_bw()
+```
+
+PC2 vs PC3
+
+```{r}
+ggplot(new_pca) +
+  aes(PC2, PC3, label=rownames(new_pca), col=group) +
+  geom_point() +
+  geom_text_repel(size=3) +
+  theme_bw()
+```
+
+
+
+
+

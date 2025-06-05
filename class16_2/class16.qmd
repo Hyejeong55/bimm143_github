@@ -1,0 +1,55 @@
+---
+title: "Class 16: Remote AWS Instance"
+author: "Hyejeong Choi (PID: A16837133)"
+format: pdf
+---
+
+> Read in the `mm-second.x.zebrafish.tsv` results:
+
+```{r}
+results <- read.table("results.tsv")
+```
+
+> Change the column names:
+
+```{r}
+colnames(results) <- c("qseqid", "sseqid", "pident", "length", "mismatch", "gapopen", "qstart", "qend", "sstart", "send", "evalue", "bitscore")
+```
+
+> Make a histogram plot of the bitscores:
+
+```{r}
+library(ggplot2)
+
+ggplot(results) +
+  aes(results$bitscore) +
+  geom_histogram(color='black', bins=30) +
+  labs(x='Bitscore')
+```
+
+The histogram shows that the bitscores are clustered around 250-375. The histogram is also skewed to the left, and very few bitscores have  high values.
+
+> Make a plot for bitscores and percent identity.
+
+```{r}
+ggplot(results) +
+  aes(pident, bitscore) +
+  geom_point(alpha=0.1) 
+```
+
+The plot shows that bitscore and percent identity have a weak, positive correlation.
+
+```{r}
+ggplot(results, aes((results$pident * (results$qend - results$qstart)), bitscore)) + geom_point(alpha=0.1) + geom_smooth()
+```
+
+> Q. Note the addition of the -r option here: What is it’s purpose? Also what about the *, what is it’s purpose here?
+
+The -r is used to connect the remote computer and your local computer so that the indicated files and directories in the code can be transferred. The * is used to read the files that all have a similar pattern in the file name that you chose.
+
+> Q. There are lots of very useful options that you can supply to rsync including the -P and -z and –exclude options. Can you determine what they do? 
+
+The -z compresses the files. The -P integrates --partial and --progress. The -exclude allows you to leave out files and directories that you do not want to include.
+
+
+

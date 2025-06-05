@@ -1,0 +1,99 @@
+---
+title: "Class 11: Comparative structure analysis"
+author: "Hyejeong Choi (PID: A16837133)"
+format: html
+---
+
+Load up the packages we will need for anaylsis of protein structure sets.
+
+```{r}
+library(bio3d)
+```
+
+We will analyze the ADK starting with a singe ADK database accession code: "1ake_A"
+
+```{r}
+id <- "1ake_A"
+aa <- get.seq(id)
+aa
+```
+
+Now we can search the PDB database to find all related enteries.
+
+```{r}
+blast <- blast.pdb(aa)
+```
+
+```{r}
+attributes(blast)
+```
+
+```{r}
+head(blast$hit.tbl)
+```
+
+Make a little summary figure of these results:
+
+```{r}
+hits <- plot(blast)
+```
+
+Our "top hits" i.e. the most similar entries in the database are:
+
+```{r}
+hits$pdb.id
+```
+
+Download related PDB files
+
+```{r}
+files <- get.pdb(hits$pdb.id, path="pdbs", split=TRUE, gzip=TRUE)
+```
+
+Align and superpose all these structures
+
+```{r}
+# Align releated PDBs
+pdbs <- pdbaln(files, fit = TRUE, exefile="msa")
+```
+
+Side-note:
+
+```{r}
+library(bio3dview)
+
+# view.pdbs(pdbs)
+```
+
+This is better, but still difficult to see what is similar and different in all these structures or indeed learn much about how this family works.
+
+Let's try PCA:
+
+```{r}
+pc <- pca(pdbs)
+plot(pc)
+```
+
+```{r}
+plot(pc, pc.axes = 1:2)
+```
+
+```{r}
+# view.pca(pc)
+```
+
+Write a PDB "trajectory" for mol-star
+
+```{r}
+mktrj(pc, file="pca_results.pdb")
+```
+
+
+
+
+
+
+
+
+
+
